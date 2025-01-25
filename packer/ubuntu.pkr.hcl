@@ -83,10 +83,10 @@ source "proxmox-iso" "ubuntu-server-numbat" {
     }
 
     # VM CPU Settings
-    cores = "1"
+    cores = "8"
 
     # VM Memory Settings
-    memory = "2048"
+    memory = "16384"
 
     # VM Network Settings
     network_adapters {
@@ -114,7 +114,7 @@ source "proxmox-iso" "ubuntu-server-numbat" {
     # PACKER Autoinstall Settings
     http_directory = "http"
     ssh_username = "ubuntu"
-    ssh_private_key_file = "~/.ssh/id_rsa"
+    ssh_private_key_file = "ssh/id_rsa"
 
     # Raise the timeout, when installation takes longer
     ssh_timeout = "20m"
