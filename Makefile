@@ -1,17 +1,16 @@
 PACKER_DIR := ./packer
 PACKER_DEBUG := ""
-PACKER_ARGS := ""
 
 .PHONY: help
 
 default: help
 
 packer-build: ## Build Proxmox template
-	cd $(PACKER_DIR); \
+	@cd $(PACKER_DIR); \
 	packer build -var-file=credentials.pkr.hcl  ubuntu.pkr.hcl $(PACKER_ARGS)
 
 packer-validate: ## Validate Packer configuration
-	cd $(PACKER_DIR); \
+	@cd $(PACKER_DIR); \
 	packer validate -var-file=credentials.pkr.hcl  ubuntu.pkr.hcl $(PACKER_ARGS)
 
 help: ## Display this help.
