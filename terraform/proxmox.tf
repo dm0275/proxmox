@@ -53,9 +53,9 @@ resource "proxmox_vm_qemu" "instance" {
 
 # Resource to configure the Proxmox VM after creation
 resource "terraform_data" "configure-vm" {
-    # Trigger reconfiguration when the VM ID changes
+    # Trigger reconfiguration when the script revision is updated
     triggers_replace = [
-        proxmox_vm_qemu.instance.id
+        var.script_revision
     ]
 
     # SSH connection settings
@@ -66,11 +66,16 @@ resource "terraform_data" "configure-vm" {
         host     = proxmox_vm_qemu.instance.ssh_host
     }
 
+    provisioner "file" {
+        source      = "files/docker.sh"
+        destination = "/tmp/docker.sh"
+    }
+
     # Provisioner to execute remote commands
     provisioner "remote-exec" {
         inline = [
-            "sudo apt update",
-            "sudo apt install vim -y"
+            "chmod +x /tmp/docker.sh",
+            "/tmp/docker.sh ${var.vm_username}",
         ]
     }
 }

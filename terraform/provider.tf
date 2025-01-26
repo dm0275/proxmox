@@ -85,6 +85,12 @@ variable "memory_size" {
     default     = 2048
 }
 
+variable "script_revision" {
+    description = "Revision number to force a re-run of the remote exec provisioner"
+    type        = number
+    default     = 1
+}
+
 provider "proxmox" {
     pm_api_url      = var.proxmox_api_url      # Proxmox API URL
     pm_api_token_id = var.proxmox_api_token_id # Proxmox API Token ID
