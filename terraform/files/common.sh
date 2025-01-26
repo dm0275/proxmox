@@ -4,4 +4,5 @@ set -e
 
 sudo apt install -y \
   software-properties-common \
-  git
+  git \
+  make
