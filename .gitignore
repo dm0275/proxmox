@@ -1,4 +1,9 @@
 .idea/
 ssh/
+.terraform
 
+*.tfstate
+*.backup
+*.lock.hcl
 credentials.pkr.hcl
+credentials.auto.tfvars
