@@ -8,6 +8,7 @@ resource "proxmox_vm_qemu" "instance" {
 
     # Disk configuration
     disk {
+        format =  "raw"
         slot    = "virtio0"                  # Specify the disk slot (virtio for better performance)
         size    = var.disk_size              # Size of the disk for the instance (e.g., "50G")
         type    = "disk"                     # Disk type
