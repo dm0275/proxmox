@@ -31,6 +31,24 @@ variable "proxmox_node" {
     default     = "proxmox"
 }
 
+variable "vm_username" {
+    description = "The username to be configured on the virtual machine"
+    type        = string
+    default     = "ubuntu"
+}
+
+variable "vm_password" {
+    description = "The password for the virtual machine's user account"
+    type        = string
+    sensitive   = true
+}
+
+variable "public_ssh_key" {
+    description = "The public SSH key for the virtual machine"
+    type        = string
+    sensitive   = true
+}
+
 variable "template_name" {
     description = "Name of the Proxmox template to clone"
     type        = string

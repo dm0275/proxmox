@@ -5,10 +5,17 @@ resource "proxmox_vm_qemu" "instance" {
     target_node = var.proxmox_node           # Proxmox node to deploy the instance on
     vmid        = var.instance_vm_id         # Unique VM ID for the instance
     clone       = var.template_name          # Name of the Proxmox template to clone
+    ciuser = var.vm_username
+    cipassword = var.vm_password
+    sshkeys = var.public_ssh_key
 
     # Disk configuration
     disk {
-        format =  "raw"
+        slot = "ide0"
+        type    = "cloudinit"
+        storage = "local-lvm"
+    }
+    disk {
         slot    = "virtio0"                  # Specify the disk slot (virtio for better performance)
         size    = var.disk_size              # Size of the disk for the instance (e.g., "50G")
         type    = "disk"                     # Disk type
@@ -31,10 +38,29 @@ resource "proxmox_vm_qemu" "instance" {
     onboot = true                            # Ensure the instance starts automatically when Proxmox boots
 
     # Network configuration
+    ipconfig0 = "ip=dhcp"
     network {
         id     = 0                           # Network interface ID
         bridge = "vmbr0"                     # Network bridge to connect the instance to
         model  = "virtio"                    # Network adapter model for better performance
+    }
+}
+
+resource "terraform_data" "configure-vm" {
+    triggers_replace = [
+        proxmox_vm_qemu.instance.id
+    ]
+    connection {
+        type     = "ssh"
+        user     = var.vm_username
+        password = var.vm_password
+        host     = proxmox_vm_qemu.instance.ssh_host
+    }
+
+    provisioner "remote-exec" {
+        inline = [
+            "sudo apt update"
+        ]
     }
 }
 
