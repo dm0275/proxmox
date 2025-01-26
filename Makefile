@@ -1,6 +1,11 @@
 PACKER_DIR := ./packer
 TERRAFORM_DIR := ./terraform
 
+# Terraform Vars
+instance_id=203
+instance_name="ubuntu-instance-03"
+timestamp=`date +%s`
+
 .PHONY: help
 
 default: help
@@ -15,11 +20,11 @@ packer-validate: ## Validate Packer configuration
 
 terraform-plan: ## Generate a TF plan
 	@cd $(TERRAFORM_DIR); \
-	terraform plan $(TF_ARGS)
+	terraform plan --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS)
 
 terraform-provision: ## Provision Proxmox instance
 	@cd $(TERRAFORM_DIR); \
-	terraform apply -auto-approve $(TF_ARGS)
+	terraform apply --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) -auto-approve $(TF_ARGS)
 
 terraform-clear-state: ## Clear Terraform state
 	@cd $(TERRAFORM_DIR); \

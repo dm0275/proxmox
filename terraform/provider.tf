@@ -61,7 +61,7 @@ variable "instance_name" {
     default     = "ubuntu-instance-01"
 }
 
-variable "instance_vm_id" {
+variable "instance_id" {
     description = "VM ID for the new instance"
     type        = number
     default     = 200

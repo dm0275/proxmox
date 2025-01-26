@@ -3,7 +3,7 @@ resource "proxmox_vm_qemu" "instance" {
     # Basic configuration
     name        = var.instance_name
     target_node = var.proxmox_node
-    vmid        = var.instance_vm_id
+    vmid        = var.instance_id
     clone       = var.template_name
 
     # Cloud-init user account config
@@ -67,11 +67,18 @@ resource "terraform_data" "configure-vm" {
     }
 
     provisioner "file" {
-        source      = "files/docker.sh"
-        destination = "/tmp/docker.sh"
+        source      = "files/"
+        destination = "/tmp/"
     }
 
     # Provisioner to execute remote commands
+    provisioner "remote-exec" {
+        inline = [
+            "chmod +x /tmp/common.sh",
+            "/tmp/common.sh",
+        ]
+    }
+
     provisioner "remote-exec" {
         inline = [
             "chmod +x /tmp/docker.sh",
