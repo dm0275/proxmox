@@ -1,50 +1,53 @@
 # Resource definition to create a Proxmox instance
 resource "proxmox_vm_qemu" "instance" {
     # Basic configuration
-    name        = var.instance_name          # Name of the new instance
-    target_node = var.proxmox_node           # Proxmox node to deploy the instance on
-    vmid        = var.instance_vm_id         # Unique VM ID for the instance
-    clone       = var.template_name          # Name of the Proxmox template to clone
-    ciuser      = var.vm_username            # Cloud-init user account for the VM
-    cipassword  = var.vm_password            # Cloud-init user password for the VM
-    sshkeys     = var.public_ssh_key         # SSH public key for secure access to the VM
+    name        = var.instance_name
+    target_node = var.proxmox_node
+    vmid        = var.instance_vm_id
+    clone       = var.template_name
+
+    # Cloud-init user account config
+    ciuser      = var.vm_username
+    cipassword  = var.vm_password
+    sshkeys     = var.public_ssh_key
 
     # Disk configuration for cloud-init
     disk {
-        slot    = "ide0"                     # Disk slot for cloud-init ISO configuration
-        type    = "cloudinit"                # Disk type for cloud-init data
-        storage = "local-lvm"                # Proxmox storage pool for cloud-init disk
+        slot    = "ide0"
+        type    = "cloudinit"
+        storage = "local-lvm"
     }
 
     # Main disk configuration
     disk {
-        slot    = "virtio0"                  # Specify the disk slot (virtio for better performance)
-        size    = var.disk_size              # Size of the disk for the instance (e.g., "50G")
-        type    = "disk"                     # Disk type for VM storage
-        storage = "local-lvm"                # Proxmox storage pool for the main disk
+        # Specify the disk slot (virtio for better performance)
+        slot    = "virtio0"
+        size    = var.disk_size
+        type    = "disk"
+        storage = "local-lvm"
     }
 
     # CPU configuration
-    cores = var.cpu_cores                    # Number of CPU cores allocated to the instance
+    cores = var.cpu_cores
 
     # Memory configuration
-    memory = var.memory_size                 # Amount of memory (RAM) in MB allocated to the instance
+    memory = var.memory_size
 
     # Operating system type
-    os_type = "cloud-init"                   # Specify that the instance will use cloud-init for initialization
+    os_type = "cloud-init"
 
     # Enable QEMU guest agent
-    agent = 1                                # Enable QEMU Guest Agent for improved management and monitoring
+    agent = 1
 
-    # Boot settings
-    onboot = true                            # Ensure the instance starts automatically when Proxmox boots
+    # Boot settings, true ensures the instance starts automatically when Proxmox boots
+    onboot = true
 
     # Network configuration
-    ipconfig0 = "ip=dhcp"                    # Configure network interface to use DHCP for IP assignment
+    ipconfig0 = "ip=dhcp"
     network {
-        id     = 0                           # Network interface ID
-        bridge = "vmbr0"                     # Network bridge to connect the instance to
-        model  = "virtio"                    # Network adapter model for better performance
+        id     = 0
+        bridge = "vmbr0"
+        model  = "virtio"
     }
 }
 
@@ -73,11 +76,11 @@ resource "terraform_data" "configure-vm" {
 
 # Output the instance details
 output "instance_details" {
-    description = "Details of the created Proxmox instance" # Description of the output
+    description = "Details of the created Proxmox instance"
     value = {
-        name        = proxmox_vm_qemu.instance.name        # Name of the Proxmox instance
-        vmid        = proxmox_vm_qemu.instance.vmid        # VM ID of the created instance
-        vmip        = proxmox_vm_qemu.instance.ssh_host    # IP address of the VM for SSH access
-        target_node = proxmox_vm_qemu.instance.target_node # Proxmox node where the instance is deployed
+        name        = proxmox_vm_qemu.instance.name
+        vmid        = proxmox_vm_qemu.instance.vmid
+        vmip        = proxmox_vm_qemu.instance.ssh_host
+        target_node = proxmox_vm_qemu.instance.target_node
     }
 }
