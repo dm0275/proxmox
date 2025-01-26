@@ -69,7 +69,8 @@ resource "terraform_data" "configure-vm" {
     # Provisioner to execute remote commands
     provisioner "remote-exec" {
         inline = [
-            "sudo apt update"
+            "sudo apt update",
+            "sudo apt install vim -y"
         ]
     }
 }
