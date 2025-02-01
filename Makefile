@@ -26,6 +26,10 @@ terraform-provision: ## Provision Proxmox instance
 	@cd $(TERRAFORM_DIR); \
 	terraform apply --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) -auto-approve $(TF_ARGS)
 
+terraform-destroy: ## Destroy Proxmox instance
+	@cd $(TERRAFORM_DIR); \
+	terraform destroy --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS)
+
 terraform-clear-state: ## Clear Terraform state
 	@cd $(TERRAFORM_DIR); \
 	rm *.tfstate *tfstate.backup
