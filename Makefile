@@ -21,6 +21,8 @@ proxmox_iso_dir=/var/lib/vz/template/iso
 
 .PHONY: help
 
+SHELL := /bin/bash
+
 default: help
 
 download-iso: ## Download Ubuntu server ISO to ./iso
@@ -108,20 +110,21 @@ terraform-provision: ## Provision Proxmox instance
 		--proxmox-instance $(proxmox_instance) \
 		--terraform-extra-args "$(TF_ARGS)"
 
-terraform-destroy: ## Destroy Proxmox instance
-	@venv/bin/python scripts/terraform.py destroy \
-		--terraform-dir $(TERRAFORM_DIR) \
-		--ubuntu-version $(ubuntu_version) \
-		--template-name $(ubuntu_template_name) \
-		$(if $(instance_id),--instance-id $(instance_id),) \
-		--instance-id-min $(instance_id_min) \
-		--template-id-min $(template_id_min) \
-		--template-id-max $(template_id_max) \
-		--instance-name $(instance_name) \
-		--script-revision $(timestamp) \
-		--proxmox-user $(proxmox_user) \
-		--proxmox-instance $(proxmox_instance) \
-		--terraform-extra-args "$(TF_ARGS)"
+terraform-destroy: ## Destroy Proxmox instance (requires instance_id=...)
+	@if [ -z "$(instance_id)" ]; then \
+		echo "instance_id is required. Usage: make terraform-destroy instance_id=<id>"; \
+		exit 1; \
+	fi
+	@cd $(TERRAFORM_DIR); \
+	terraform plan -destroy --var ubuntu_version=$(ubuntu_version) --var template_name=$(ubuntu_template_name) --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS); \
+	printf "Destroy instance_id=$(instance_id)? [y/N]: " > /dev/tty; \
+	read -r -n 1 response < /dev/tty; \
+	echo ""; \
+	if [[ ! "$$response" =~ ^[yY]$$ ]]; then \
+		echo "Destroy cancelled."; \
+		exit 1; \
+	fi; \
+	terraform destroy -auto-approve --var ubuntu_version=$(ubuntu_version) --var template_name=$(ubuntu_template_name) --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS)
 
 terraform-clear-state: ## Clear Terraform state
 	@venv/bin/python scripts/terraform.py clear-state --terraform-dir $(TERRAFORM_DIR)

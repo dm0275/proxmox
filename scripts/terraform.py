@@ -8,6 +8,12 @@ from pathlib import Path
 
 
 def resolve_instance_id(args: argparse.Namespace) -> int:
+    if args.mode == "destroy" and args.instance_id is None:
+        sys.stderr.write(
+            "--instance-id is required for destroy; auto-discovery is not supported.\n"
+        )
+        raise SystemExit(1)
+
     if args.instance_id is not None:
         return args.instance_id
 
