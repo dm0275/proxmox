@@ -34,17 +34,22 @@ variable "vm_id" {
 
 variable "vm_name" {
     type = string # Name of the VM template to be created
-    default = "ubuntu-24.04-template"
+    default = "ubuntu-26.04-template"
 }
 
 variable "template_description" {
     type = string # Description for the VM template
-    default = "Ubuntu 24.04 Image"
+    default = "Ubuntu 26.04 Image"
 }
 
 variable "iso_file" {
     type = string # ISO file to use for OS installation
-    default = "local:iso/ubuntu-24.04.1-live-server-amd64.iso"
+    default = "local:iso/ubuntu-26.04-live-server-amd64.iso"
+}
+
+variable "ubuntu_version" {
+    type = string # Ubuntu major/minor version used to derive defaults
+    default = "26.04"
 }
 
 variable "disk_size" {

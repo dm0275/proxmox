@@ -11,6 +11,9 @@ timestamp=`date +%s`
 ubuntu_version=26.04
 ubuntu_iso_name=ubuntu-$(ubuntu_version)-live-server-amd64.iso
 ubuntu_iso_url=https://releases.ubuntu.com/$(ubuntu_version)/$(ubuntu_iso_name)
+ubuntu_template_name=ubuntu-$(ubuntu_version)-template
+template_id_min=900
+template_id_max=999
 proxmox_instance=proxmox.lan
 proxmox_user=root
 proxmox_iso_dir=/var/lib/vz/template/iso
@@ -27,29 +30,64 @@ download-iso: ## Download Ubuntu server ISO to ./iso
 upload-iso: ## Upload ISO from ./iso to Proxmox ISO storage via scp
 	@scp $(ISO_DIR)/$(ubuntu_iso_name) $(proxmox_user)@$(proxmox_instance):$(proxmox_iso_dir)/$(ubuntu_iso_name)
 
+next-template-id: ## Print next free template ID in range
+	@venv/bin/python scripts/proxmox.py next-template-id \
+		--proxmox-user $(proxmox_user) \
+		--proxmox-instance $(proxmox_instance) \
+		--template-id-min $(template_id_min) \
+		--template-id-max $(template_id_max)
+
 packer-build: ## Build Proxmox template
-	@cd $(PACKER_DIR); \
-	packer build -var-file=credentials.pkr.hcl  ubuntu.pkr.hcl $(PACKER_ARGS)
+	@venv/bin/python scripts/packer.py build \
+		--packer-dir $(PACKER_DIR) \
+		--credentials-file credentials.pkr.hcl \
+		--ubuntu-version $(ubuntu_version) \
+		--template-name $(ubuntu_template_name) \
+		--template-description "Ubuntu $(ubuntu_version) Image" \
+		--iso-name $(ubuntu_iso_name) \
+		--iso-storage local \
+		--proxmox-user $(proxmox_user) \
+		--proxmox-instance $(proxmox_instance) \
+		--template-id-min $(template_id_min) \
+		--template-id-max $(template_id_max) \
+		$(if $(packer_vm_id),--vm-id $(packer_vm_id),) \
+		--packer-extra-args "$(PACKER_ARGS)"
 
 packer-validate: ## Validate Packer configuration
-	@cd $(PACKER_DIR); \
-	packer validate -var-file=credentials.pkr.hcl  ubuntu.pkr.hcl $(PACKER_ARGS)
+	@venv/bin/python scripts/packer.py validate \
+		--packer-dir $(PACKER_DIR) \
+		--credentials-file credentials.pkr.hcl \
+		--ubuntu-version $(ubuntu_version) \
+		--template-name $(ubuntu_template_name) \
+		--template-description "Ubuntu $(ubuntu_version) Image" \
+		--iso-name $(ubuntu_iso_name) \
+		--iso-storage local \
+		--proxmox-user $(proxmox_user) \
+		--proxmox-instance $(proxmox_instance) \
+		--template-id-min $(template_id_min) \
+		--template-id-max $(template_id_max) \
+		$(if $(packer_vm_id),--vm-id $(packer_vm_id),) \
+		--packer-extra-args "$(PACKER_ARGS)"
 
 terraform-plan: ## Generate a TF plan
 	@cd $(TERRAFORM_DIR); \
-	terraform plan --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS)
+	terraform plan --var ubuntu_version=$(ubuntu_version) --var template_name=$(ubuntu_template_name) --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS)
 
 terraform-provision: ## Provision Proxmox instance
 	@cd $(TERRAFORM_DIR); \
-	terraform apply --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) -auto-approve $(TF_ARGS)
+	terraform apply --var ubuntu_version=$(ubuntu_version) --var template_name=$(ubuntu_template_name) --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) -auto-approve $(TF_ARGS)
 
 terraform-destroy: ## Destroy Proxmox instance
 	@cd $(TERRAFORM_DIR); \
-	terraform destroy --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS)
+	terraform destroy --var ubuntu_version=$(ubuntu_version) --var template_name=$(ubuntu_template_name) --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS)
 
 terraform-clear-state: ## Clear Terraform state
 	@cd $(TERRAFORM_DIR); \
 	rm *.tfstate *tfstate.backup
+
+lint: ## Lint Python scripts with ruff
+	@venv/bin/python -m ruff check scripts/*.py
+	@venv/bin/python -m ruff format scripts/*.py
 
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

@@ -52,7 +52,13 @@ variable "public_ssh_key" {
 variable "template_name" {
     description = "Name of the Proxmox template to clone"
     type        = string
-    default     = "ubuntu-24.04-template"
+    default     = "ubuntu-26.04-template"
+}
+
+variable "ubuntu_version" {
+    description = "Ubuntu major/minor version used for template naming"
+    type        = string
+    default     = "26.04"
 }
 
 variable "instance_name" {

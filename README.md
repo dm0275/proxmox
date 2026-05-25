@@ -2,14 +2,16 @@
 
 Automates Ubuntu VM lifecycle on Proxmox using:
 
-- **Packer** to build a reusable Ubuntu 24.04 cloud-init template
+- **Packer** to build a reusable Ubuntu cloud-init template
 - **Terraform** to clone and provision instances from that template
 - **Make** targets for common workflows
 
 ## Repository Layout
 
-- `packer/` builds the Proxmox template (`ubuntu-24.04-template` by default)
+- `packer/` builds the Proxmox template (`ubuntu-<version>-template` by default)
 - `terraform/` clones template into a VM and runs post-creation provisioning scripts
+- `scripts/proxmox.sh` handles Proxmox-specific helpers (such as finding next template ID)
+- `scripts/packer.py` centralizes Packer build/validate logic
 - `Makefile` wraps common Packer/Terraform commands
 
 ## Prerequisites
@@ -23,7 +25,7 @@ Install on your workstation:
 
 Also ensure:
 
-- Ubuntu 24.04 installer ISO exists in Proxmox storage as `local:iso/ubuntu-24.04.1-live-server-amd64.iso` (or update `packer/ubuntu.pkr.hcl`)
+- Ubuntu installer ISO exists in Proxmox storage as `local:iso/ubuntu-<version>-live-server-amd64.iso`
 - `packer/ssh/id_rsa` exists and matches the expected SSH key for the template build process
 
 ## Credentials and Variables
@@ -54,7 +56,7 @@ vm_password   = "<vm-password>"
 public_ssh_key = "ssh-ed25519 AAAA..."
 
 # Optional overrides
-# template_name = "ubuntu-24.04-template"
+# template_name = "ubuntu-26.04-template"
 # proxmox_node  = "proxmox"
 ```
 
@@ -63,13 +65,15 @@ public_ssh_key = "ssh-ed25519 AAAA..."
 From repository root:
 
 ```bash
+make download-iso
+make upload-iso
 make packer-validate
 make packer-build
 ```
 
 What this does:
 
-- Creates a VM template (default ID `900`, name `ubuntu-24.04-template`)
+- Creates a VM template (default ID `900`, name `ubuntu-<version>-template`)
 - Uses autoinstall cloud-init from `packer/http/user-data`
 - Enables `qemu-guest-agent`
 - Cleans cloud-init/SSH machine identity for safe cloning
@@ -85,6 +89,7 @@ make terraform-provision
 
 Defaults in `Makefile`:
 
+- `ubuntu_version=26.04`
 - `instance_id=203`
 - `instance_name="ubuntu-instance-03"`
 
@@ -93,6 +98,36 @@ Override per run:
 ```bash
 make terraform-plan instance_id=210 instance_name='"ubuntu-dev-01"'
 make terraform-provision instance_id=210 instance_name='"ubuntu-dev-01"'
+```
+
+To switch Ubuntu version for all steps (ISO, template build, and clone source):
+
+```bash
+make download-iso ubuntu_version=26.04.1
+make upload-iso ubuntu_version=26.04.1
+make packer-build ubuntu_version=26.04.1
+make terraform-provision ubuntu_version=26.04.1 instance_id=210 instance_name='"ubuntu-dev-01"'
+```
+
+Use `next-template-id` to print the next available template ID in the `900-999` range:
+
+```bash
+make next-template-id
+```
+
+`packer-build` and `packer-validate` query the next template ID automatically when `packer_vm_id` is not provided.
+
+To force a specific ID:
+
+```bash
+make packer-build ubuntu_version=26.04 packer_vm_id=900
+```
+
+You can also run the Packer helper directly:
+
+```bash
+venv/bin/python scripts/packer.py validate --ubuntu-version 26.04 --vm-id 905
+venv/bin/python scripts/packer.py build --ubuntu-version 26.04 --vm-id 905
 ```
 
 Destroy VM:
@@ -124,6 +159,8 @@ Available targets:
 
 - `packer-validate`
 - `packer-build`
+- `download-iso`
+- `upload-iso`
 - `terraform-plan`
 - `terraform-provision`
 - `terraform-destroy`
