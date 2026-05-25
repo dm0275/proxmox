@@ -71,7 +71,7 @@ def main() -> int:
     parser.add_argument("--instance-id-min", type=int, default=100)
     parser.add_argument("--template-id-min", type=int, default=900)
     parser.add_argument("--template-id-max", type=int, default=999)
-    parser.add_argument("--instance-name", default="ubuntu-instance-03")
+    parser.add_argument("--instance-name", default="")
     parser.add_argument("--script-revision", type=int, default=1)
     parser.add_argument("--proxmox-user", default="root")
     parser.add_argument("--proxmox-instance", default="proxmox.lan")
@@ -89,6 +89,7 @@ def main() -> int:
 
     template_name = args.template_name or f"ubuntu-{args.ubuntu_version}-template"
     instance_id = resolve_instance_id(args)
+    instance_name = args.instance_name or f"ubuntu-instance-{instance_id}"
     print(f"Using instance_id={instance_id}")
 
     mode_map = {
@@ -102,7 +103,7 @@ def main() -> int:
         f"--var=ubuntu_version={args.ubuntu_version}",
         f"--var=template_name={template_name}",
         f"--var=instance_id={instance_id}",
-        f"--var=instance_name={args.instance_name}",
+        f"--var=instance_name={instance_name}",
         f"--var=script_revision={args.script_revision}",
     ]
 

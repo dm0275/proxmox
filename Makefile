@@ -5,7 +5,7 @@ ISO_DIR := ./iso
 # Terraform Vars
 instance_id=
 instance_id_min=100
-instance_name="ubuntu-instance-03"
+instance_name=
 timestamp=`date +%s`
 
 # Ubuntu ISO Vars
