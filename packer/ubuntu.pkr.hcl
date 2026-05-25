@@ -147,7 +147,26 @@ build {
     name = "ubuntu-server"
     sources = ["proxmox-iso.ubuntu-server"]
 
-    # Provisioners for VM Customization and Cleanup
+    # Provisioners for VM bootstrap, customization, and cleanup
+    provisioner "file" {
+        source      = "files/common-bootstrap.sh"
+        destination = "/tmp/common-bootstrap.sh"
+    }
+
+    provisioner "file" {
+        source      = "files/docker-bootstrap.sh"
+        destination = "/tmp/docker-bootstrap.sh"
+    }
+
+    provisioner "shell" {
+        inline = [
+            "chmod +x /tmp/common-bootstrap.sh",
+            "chmod +x /tmp/docker-bootstrap.sh",
+            "/tmp/common-bootstrap.sh",
+            "/tmp/docker-bootstrap.sh ubuntu",
+        ]
+    }
+
     provisioner "shell" {
         inline = [
             "while [ ! -f /var/lib/cloud/instance/boot-finished ]; do echo 'Waiting for cloud-init...'; sleep 1; done",
