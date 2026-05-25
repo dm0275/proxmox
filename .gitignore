@@ -8,3 +8,5 @@ ssh/
 *.lock.info
 credentials.pkr.hcl
 credentials.auto.tfvars
+
+iso/

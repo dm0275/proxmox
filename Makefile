@@ -1,14 +1,31 @@
 PACKER_DIR := ./packer
 TERRAFORM_DIR := ./terraform
+ISO_DIR := ./iso
 
 # Terraform Vars
 instance_id=203
 instance_name="ubuntu-instance-03"
 timestamp=`date +%s`
 
+# Ubuntu ISO Vars
+ubuntu_version=26.04
+ubuntu_iso_name=ubuntu-$(ubuntu_version)-live-server-amd64.iso
+ubuntu_iso_url=https://releases.ubuntu.com/$(ubuntu_version)/$(ubuntu_iso_name)
+proxmox_instance=proxmox.lan
+proxmox_user=root
+proxmox_iso_dir=/var/lib/vz/template/iso
+
 .PHONY: help
 
 default: help
+
+download-iso: ## Download Ubuntu server ISO to ./iso
+	@mkdir -p $(ISO_DIR); \
+	curl -fL $(ubuntu_iso_url) -o $(ISO_DIR)/$(ubuntu_iso_name); \
+	echo "Downloaded $(ubuntu_iso_name) to $(ISO_DIR)/"
+
+upload-iso: ## Upload ISO from ./iso to Proxmox ISO storage via scp
+	@scp $(ISO_DIR)/$(ubuntu_iso_name) $(proxmox_user)@$(proxmox_instance):$(proxmox_iso_dir)/$(ubuntu_iso_name)
 
 packer-build: ## Build Proxmox template
 	@cd $(PACKER_DIR); \
