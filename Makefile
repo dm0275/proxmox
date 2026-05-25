@@ -3,7 +3,8 @@ TERRAFORM_DIR := ./terraform
 ISO_DIR := ./iso
 
 # Terraform Vars
-instance_id=203
+instance_id=
+instance_id_min=100
 instance_name="ubuntu-instance-03"
 timestamp=`date +%s`
 
@@ -34,6 +35,14 @@ next-template-id: ## Print next free template ID in range
 	@venv/bin/python scripts/proxmox.py next-template-id \
 		--proxmox-user $(proxmox_user) \
 		--proxmox-instance $(proxmox_instance) \
+		--template-id-min $(template_id_min) \
+		--template-id-max $(template_id_max)
+
+next-instance-id: ## Print next free VM instance ID from minimum
+	@venv/bin/python scripts/proxmox.py next-instance-id \
+		--proxmox-user $(proxmox_user) \
+		--proxmox-instance $(proxmox_instance) \
+		--instance-id-min $(instance_id_min) \
 		--template-id-min $(template_id_min) \
 		--template-id-max $(template_id_max)
 
@@ -70,20 +79,52 @@ packer-validate: ## Validate Packer configuration
 		--packer-extra-args "$(PACKER_ARGS)"
 
 terraform-plan: ## Generate a TF plan
-	@cd $(TERRAFORM_DIR); \
-	terraform plan --var ubuntu_version=$(ubuntu_version) --var template_name=$(ubuntu_template_name) --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS)
+	@venv/bin/python scripts/terraform.py plan \
+		--terraform-dir $(TERRAFORM_DIR) \
+		--ubuntu-version $(ubuntu_version) \
+		--template-name $(ubuntu_template_name) \
+		$(if $(instance_id),--instance-id $(instance_id),) \
+		--instance-id-min $(instance_id_min) \
+		--template-id-min $(template_id_min) \
+		--template-id-max $(template_id_max) \
+		--instance-name $(instance_name) \
+		--script-revision $(timestamp) \
+		--proxmox-user $(proxmox_user) \
+		--proxmox-instance $(proxmox_instance) \
+		--terraform-extra-args "$(TF_ARGS)"
 
 terraform-provision: ## Provision Proxmox instance
-	@cd $(TERRAFORM_DIR); \
-	terraform apply --var ubuntu_version=$(ubuntu_version) --var template_name=$(ubuntu_template_name) --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) -auto-approve $(TF_ARGS)
+	@venv/bin/python scripts/terraform.py provision \
+		--terraform-dir $(TERRAFORM_DIR) \
+		--ubuntu-version $(ubuntu_version) \
+		--template-name $(ubuntu_template_name) \
+		$(if $(instance_id),--instance-id $(instance_id),) \
+		--instance-id-min $(instance_id_min) \
+		--template-id-min $(template_id_min) \
+		--template-id-max $(template_id_max) \
+		--instance-name $(instance_name) \
+		--script-revision $(timestamp) \
+		--proxmox-user $(proxmox_user) \
+		--proxmox-instance $(proxmox_instance) \
+		--terraform-extra-args "$(TF_ARGS)"
 
 terraform-destroy: ## Destroy Proxmox instance
-	@cd $(TERRAFORM_DIR); \
-	terraform destroy --var ubuntu_version=$(ubuntu_version) --var template_name=$(ubuntu_template_name) --var instance_id=$(instance_id) --var instance_name=$(instance_name) --var script_revision=$(timestamp) $(TF_ARGS)
+	@venv/bin/python scripts/terraform.py destroy \
+		--terraform-dir $(TERRAFORM_DIR) \
+		--ubuntu-version $(ubuntu_version) \
+		--template-name $(ubuntu_template_name) \
+		$(if $(instance_id),--instance-id $(instance_id),) \
+		--instance-id-min $(instance_id_min) \
+		--template-id-min $(template_id_min) \
+		--template-id-max $(template_id_max) \
+		--instance-name $(instance_name) \
+		--script-revision $(timestamp) \
+		--proxmox-user $(proxmox_user) \
+		--proxmox-instance $(proxmox_instance) \
+		--terraform-extra-args "$(TF_ARGS)"
 
 terraform-clear-state: ## Clear Terraform state
-	@cd $(TERRAFORM_DIR); \
-	rm *.tfstate *tfstate.backup
+	@venv/bin/python scripts/terraform.py clear-state --terraform-dir $(TERRAFORM_DIR)
 
 lint: ## Lint Python scripts with ruff
 	@venv/bin/python -m ruff check scripts/*.py

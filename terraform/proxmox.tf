@@ -28,7 +28,9 @@ resource "proxmox_vm_qemu" "instance" {
     }
 
     # CPU configuration
-    cores = var.cpu_cores
+    cpu {
+        cores = var.cpu_cores
+    }
 
     # Memory configuration
     memory = var.memory_size
@@ -40,7 +42,7 @@ resource "proxmox_vm_qemu" "instance" {
     agent = 1
 
     # Boot settings, true ensures the instance starts automatically when Proxmox boots
-    onboot = true
+    start_at_node_boot = true
 
     # Network configuration
     ipconfig0 = "ip=dhcp"
@@ -48,42 +50,6 @@ resource "proxmox_vm_qemu" "instance" {
         id     = 0
         bridge = "vmbr0"
         model  = "virtio"
-    }
-}
-
-# Resource to configure the Proxmox VM after creation
-resource "terraform_data" "configure-vm" {
-    # Trigger reconfiguration when the script revision is updated
-    triggers_replace = [
-        var.script_revision
-    ]
-
-    # SSH connection settings
-    connection {
-        type     = "ssh"
-        user     = var.vm_username
-        password = var.vm_password
-        host     = proxmox_vm_qemu.instance.ssh_host
-    }
-
-    provisioner "file" {
-        source      = "files/"
-        destination = "/tmp/"
-    }
-
-    # Provisioner to execute remote commands
-    provisioner "remote-exec" {
-        inline = [
-            "chmod +x /tmp/common.sh",
-            "/tmp/common.sh",
-        ]
-    }
-
-    provisioner "remote-exec" {
-        inline = [
-            "chmod +x /tmp/docker.sh",
-            "/tmp/docker.sh ${var.vm_username}",
-        ]
     }
 }
 

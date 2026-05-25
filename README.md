@@ -10,8 +10,9 @@ Automates Ubuntu VM lifecycle on Proxmox using:
 
 - `packer/` builds the Proxmox template (`ubuntu-<version>-template` by default)
 - `terraform/` clones template into a VM and runs post-creation provisioning scripts
-- `scripts/proxmox.sh` handles Proxmox-specific helpers (such as finding next template ID)
+- `scripts/proxmox.py` handles Proxmox-specific helpers (such as finding next template/instance IDs)
 - `scripts/packer.py` centralizes Packer build/validate logic
+- `scripts/terraform.py` centralizes Terraform plan/provision/destroy/clear-state logic
 - `Makefile` wraps common Packer/Terraform commands
 
 ## Prerequisites
@@ -90,7 +91,7 @@ make terraform-provision
 Defaults in `Makefile`:
 
 - `ubuntu_version=26.04`
-- `instance_id=203`
+- `instance_id` auto-resolves to the next available VM ID (starting at `100`) unless overridden
 - `instance_name="ubuntu-instance-03"`
 
 Override per run:
@@ -136,18 +137,18 @@ Destroy VM:
 make terraform-destroy instance_id=210 instance_name='"ubuntu-dev-01"'
 ```
 
-## Post-Provisioning Behavior
+## Image and Provisioning Behavior
 
-Terraform copies and executes scripts from `terraform/files/`:
+Packer template build executes scripts from `packer/files/`:
 
-- `common.sh`
+- `common-bootstrap.sh`
   - Installs base packages (`git`, `make`, `zsh`, etc.)
   - Installs Oh My Zsh and sets theme
-- `docker.sh`
+- `docker-bootstrap.sh`
   - Installs Docker CE + plugins
   - Adds VM user to `docker` group
-- `netdrive.sh`
-  - Utility script for mounting SMB shares (not auto-run by current Terraform config)
+
+Terraform now focuses on cloning/configuring VM resources in Proxmox. `terraform/files/netdrive.sh` remains available as a utility script for SMB mounting but is not auto-run.
 
 ## Make Targets
 

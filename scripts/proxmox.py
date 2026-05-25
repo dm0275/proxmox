@@ -36,6 +36,36 @@ def get_next_template_id(
     return next_id
 
 
+def get_next_instance_id(
+    proxmox_user: str,
+    proxmox_instance: str,
+    instance_id_min: int,
+    template_id_min: int,
+    template_id_max: int,
+) -> int:
+    ssh_target = f"{proxmox_user}@{proxmox_instance}"
+    cmd = ["ssh", ssh_target, "qm list"]
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+    ids = []
+    for line in result.stdout.splitlines()[1:]:
+        parts = line.split()
+        if not parts:
+            continue
+        try:
+            vmid = int(parts[0])
+        except ValueError:
+            continue
+        if vmid < instance_id_min:
+            continue
+        if template_id_min <= vmid <= template_id_max:
+            continue
+        if vmid >= instance_id_min:
+            ids.append(vmid)
+
+    return (max(ids) + 1) if ids else instance_id_min
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="scripts/proxmox.py",
@@ -53,6 +83,17 @@ def main() -> int:
     next_id_parser.add_argument("--template-id-max", type=int, default=999)
     next_id_parser.add_argument("--out-file", default="")
 
+    next_instance_parser = subparsers.add_parser(
+        "next-instance-id",
+        help="Find the next free instance ID from a minimum",
+    )
+    next_instance_parser.add_argument("--proxmox-user", default="root")
+    next_instance_parser.add_argument("--proxmox-instance", default="proxmox.lan")
+    next_instance_parser.add_argument("--instance-id-min", type=int, default=100)
+    next_instance_parser.add_argument("--template-id-min", type=int, default=900)
+    next_instance_parser.add_argument("--template-id-max", type=int, default=999)
+    next_instance_parser.add_argument("--out-file", default="")
+
     args = parser.parse_args()
 
     if args.command == "next-template-id":
@@ -69,6 +110,24 @@ def main() -> int:
         except ValueError as exc:
             sys.stderr.write(str(exc) + "\n")
             return 1
+
+        if args.out_file:
+            Path(args.out_file).write_text(f"{next_id}\n", encoding="utf-8")
+        print(next_id)
+        return 0
+
+    if args.command == "next-instance-id":
+        try:
+            next_id = get_next_instance_id(
+                args.proxmox_user,
+                args.proxmox_instance,
+                args.instance_id_min,
+                args.template_id_min,
+                args.template_id_max,
+            )
+        except subprocess.CalledProcessError as exc:
+            sys.stderr.write(exc.stderr or str(exc) + "\n")
+            return exc.returncode or 1
 
         if args.out_file:
             Path(args.out_file).write_text(f"{next_id}\n", encoding="utf-8")

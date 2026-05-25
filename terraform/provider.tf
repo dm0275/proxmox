@@ -3,7 +3,7 @@ terraform {
     required_providers {
         proxmox = {
             source  = "Telmate/proxmox"
-            version = "3.0.1-rc6"
+            version = "3.0.2-rc07"
         }
     }
 }
@@ -82,13 +82,13 @@ variable "disk_size" {
 variable "cpu_cores" {
     description = "Number of CPU cores for the instance"
     type        = number
-    default     = 2
+    default     = 8
 }
 
 variable "memory_size" {
     description = "Memory size for the instance in MB"
     type        = number
-    default     = 2048
+    default     = 16384
 }
 
 variable "script_revision" {
